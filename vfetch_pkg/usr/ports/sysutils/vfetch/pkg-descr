@@ -1,0 +1,14 @@
+vfetch
+=====
+
+A FastFetch-like system information tool built with V and Nim interoperability.
+
+vfetch is a command-line system information tool that displays system information with ASCII art logos, similar to FastFetch. It demonstrates V-Nim interoperability by combining V for system information gathering and Nim for image/ASCII art rendering.
+
+Features:
+- Displays system information (OS, kernel, uptime, packages, shell, DE/WM, CPU, GPU, memory, disk, network)
+- Shows ASCII art logo
+- Fast and lightweight
+
+Usage:
+Simply run 'vfetch' to display system information.

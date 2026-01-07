@@ -1,0 +1,16 @@
+name: vfetch
+origin: sysutils/vfetch
+version: 1.0.0
+revision: 1
+arch: freebsd:15:amd64
+maintainer: xaturing@example.com
+www: https://github.com/xaturing/vfetch
+comment: V-Nim FastFetch-like system information tool
+desc: A FastFetch-like system information tool built with V and Nim interoperability.
+categories: [sysutils]
+prefix: /usr/local
+users: []
+groups: []
+licenses: [MIT]
+license_logic: single
+annotations: {}

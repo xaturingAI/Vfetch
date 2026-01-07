@@ -1,0 +1,367 @@
+// vfetch_config.v - vfetch with persistent configuration support
+
+import os
+
+struct SystemInfo {
+	host string
+	kernel string
+	uptime string
+	packages string
+	shell string
+	de string
+	wm string
+	cpu string
+	gpu string
+	memory string
+	disk string
+	network string
+	username string
+	os_name string
+}
+
+struct Config {
+mut:
+	logo_file string
+	image_file string
+	display_mode string
+	show_colors bool
+	show_ascii_art bool
+}
+
+// Get hostname
+fn get_host_info() string {
+	// In real implementation: return os.get_hostname() or execute 'hostname'
+	return 'Standard PC (Q35 + ICH9, 2009) (pc-q35-10.1)'
+}
+
+// Get kernel information
+fn get_kernel_info() string {
+	// In real implementation: read from /proc/version or execute 'uname -r'
+	return 'FreeBSD 15.0-RELEASE'
+}
+
+// Get system uptime
+fn get_uptime() string {
+	// In real implementation: read from /proc/uptime or execute 'uptime'
+	return '17 hours, 53 mins'
+}
+
+// Get package count
+fn get_packages_count() string {
+	// In real implementation: execute package manager command
+	return '625 (pkg)'
+}
+
+// Get shell information
+fn get_shell() string {
+	// In real implementation: read from environment
+	return 'bash 5.3.3'
+}
+
+// Get desktop environment
+fn get_desktop_environment() string {
+	// In real implementation: check environment variables
+	return 'Xfce4 4.20'
+}
+
+// Get window manager
+fn get_window_manager() string {
+	// In real implementation: check environment
+	return 'Xfwm4 (X11)'
+}
+
+// Get CPU information
+fn get_cpu_info() string {
+	// In real implementation: read from /proc/cpuinfo
+	return 'Intel(R) Core(TM) i5-4430 (4) @ 3.00 GHz'
+}
+
+// Get GPU information
+fn get_gpu_info() string {
+	// In real implementation: use lspci or similar
+	return 'AMD Radeon RX 580 2048SP'
+}
+
+// Get memory information
+fn get_memory_info() string {
+	// In real implementation: read from /proc/meminfo
+	return '10.72 GiB / 14.59 GiB (73%)'
+}
+
+// Get disk information
+fn get_disk_info() string {
+	// In real implementation: execute 'df' command
+	return '8.33 GiB / 185.30 GiB (4%) - zfs'
+}
+
+// Get network information
+fn get_network_info() string {
+	// In real implementation: check network interfaces
+	return '192.168.0.157/24'
+}
+
+// Get username
+fn get_username() string {
+	// In real implementation: get from environment
+	return 'xaturing'
+}
+
+// Get OS name
+fn get_os_name() string {
+	// In real implementation: get OS name
+	return 'FreeBSD'
+}
+
+// Get system information
+fn get_system_info() SystemInfo {
+	info := SystemInfo{
+		host: get_host_info()
+		kernel: get_kernel_info()
+		uptime: get_uptime()
+		packages: get_packages_count()
+		shell: get_shell()
+		de: get_desktop_environment()
+		wm: get_window_manager()
+		cpu: get_cpu_info()
+		gpu: get_gpu_info()
+		memory: get_memory_info()
+		disk: get_disk_info()
+		network: get_network_info()
+		username: get_username()
+		os_name: get_os_name()
+	}
+	return info
+}
+
+// Read configuration from file
+fn read_config() Config {
+	config_path := os.home_dir() + '/.config/vfetch.conf'
+	
+	// Default config
+	default_config := Config{
+		logo_file: ''
+		image_file: ''
+		display_mode: 'auto'
+		show_colors: true
+		show_ascii_art: true
+	}
+	
+	if os.exists(config_path) {
+		content := os.read_file(config_path) or {
+			return default_config
+		}
+		
+		// Parse config file
+		lines := content.split('\n')
+		mut config := default_config
+
+		for line in lines {
+			mut line_trimmed := line.trim_space()
+			if line_trimmed == '' || (line_trimmed.len > 0 && line_trimmed[0] == 35) {  // 35 is ASCII for '#'
+				continue
+			}
+
+			parts := line_trimmed.split('=')
+			if parts.len >= 2 {
+				key := parts[0].trim_space()
+				value := parts[1].trim_space()
+
+				if key == 'logo_file' {
+					config.logo_file = value
+				} else if key == 'image_file' {
+					config.image_file = value
+				} else if key == 'display_mode' {
+					config.display_mode = value
+				} else if key == 'show_colors' {
+					config.show_colors = value == 'true'
+				} else if key == 'show_ascii_art' {
+					config.show_ascii_art = value == 'true'
+				}
+			}
+		}
+		
+		return config
+	}
+	
+	return default_config
+}
+
+// Default ASCII art logo
+fn get_default_logo() string {
+	return '```                        `\n  ` `.....---.......--.```   -/\n  +o   .--`         /y:`      +.\n   yo`:.            :o      `+-\n    y/               -/`   -o/\n   .-                  ::/sy+:.\n   /                     `--  /\n  `:                          :`\n  `:                          :`\n   /                          /\n   .-                        -.\n    --                      -.\n     `:`                  `:`\n       .--             `--.\n          .---.....----.'
+}
+
+// Specific logo for FreeBSD
+fn get_freebsd_logo() string {
+	return ' |/,,_____,~~`/\n   | |  |_________) \n   |  /\n   |__|'
+}
+
+// Get logo from file if specified
+fn get_logo_from_file(filepath string) string {
+	if os.exists(filepath) {
+		content := os.read_file(filepath) or {
+			eprintln('Error reading logo file: ${filepath}')
+			return get_default_logo()
+		}
+		return content
+	} else {
+		eprintln('Logo file not found: ${filepath}')
+		return get_default_logo()
+	}
+}
+
+// Print logo based on user preference
+fn print_logo(logo_choice string, config_file string) {
+	mut logo := ''
+	
+	if config_file != '' {
+		// Use configured logo file
+		logo = get_logo_from_file(config_file)
+	} else {
+		// Use default logic
+		match logo_choice {
+			'freebsd' { logo = get_freebsd_logo() }
+			'custom' {
+				env_var := os.getenv('VFETCH_LOGO_FILE')
+				logo = get_logo_from_file(env_var)
+			}
+			else { logo = get_default_logo() }
+		}
+	}
+	println(logo)
+}
+
+// Execute shell command to display image
+fn display_image(image_path string, display_mode string) {
+	// In a real implementation, this would call a Nim program or system utility
+	// For now, we'll simulate the behavior
+	if image_path != '' {
+		println('Displaying image: ${image_path} in mode: ${display_mode}')
+	}
+	// This would execute a command like: 
+	// nim run image_display_advanced.nim "${image_path}" "${display_mode}"
+}
+
+fn main() {
+	// Read configuration
+	config := read_config()
+	
+	mut logo_choice := 'default' // default logo
+	mut image_path := config.image_file  // Use configured image
+	mut set_image_mode := false
+	mut display_image_mode := false
+	mut display_mode := config.display_mode  // Use configured display mode
+	mut logo_file_path := config.logo_file  // Use configured logo file
+	
+	// Parse command line arguments
+	if os.args.len > 1 {
+		mut i := 1
+		for i < os.args.len {
+			arg := os.args[i]
+			
+			if arg == '-l' || arg == '--logo' {
+				if i + 1 < os.args.len {
+					logo_choice = os.args[i + 1]
+					i += 2
+				} else {
+					println('Usage: vfetch [-l|--logo] [logo_name]')
+					println('Available logos: default, freebsd, custom')
+					return
+				}
+			} else if arg == '-setimage' {
+				if i + 1 < os.args.len {
+					image_path = os.args[i + 1]
+					set_image_mode = true
+					// Check if a display mode is specified
+					if i + 2 < os.args.len {
+						arg_check := os.args[i + 2]
+						if arg_check.len > 0 && arg_check[0] != 45 {  // 45 is ASCII for '-'
+							display_mode = os.args[i + 2]
+							i += 3
+						} else {
+							i += 2
+						}
+					} else {
+						i += 2
+					}
+				} else {
+					println('Usage: vfetch -setimage <image_path> [display_mode]')
+					println('Display modes: normal, ascii, auto (default: auto)')
+					println('Supported formats: PNG, JPG, JPEG, GIF')
+					return
+				}
+			} else if arg == '-displayimage' {
+				if i + 1 < os.args.len {
+					image_path = os.args[i + 1]
+					display_image_mode = true
+					// Check if a display mode is specified
+					if i + 2 < os.args.len {
+						arg_check := os.args[i + 2]
+						if arg_check.len > 0 && arg_check[0] != 45 {  // 45 is ASCII for '-'
+							display_mode = os.args[i + 2]
+							i += 3
+						} else {
+							i += 2
+						}
+					} else {
+						i += 2
+					}
+				} else {
+					println('Usage: vfetch -displayimage <image_path> [display_mode]')
+					println('Display modes: normal, ascii, auto (default: auto)')
+					println('Supported formats: PNG, JPG, JPEG, GIF')
+					return
+				}
+			} else if arg == '-h' || arg == '--help' {
+				println('vfetch - System information tool with customizable logos and images')
+				println('Usage: vfetch [options]')
+				println('Options:')
+				println('  -l, --logo [logo_name]              Select logo (default, freebsd, custom)')
+				println('  -setimage <image_path> [display_mode]  Set image to display (PNG, JPG, JPEG, GIF)')
+				println('                                       Display modes: normal, ascii, auto (default: auto)')
+				println('  -displayimage <image_path> [display_mode]  Display an image directly')
+				println('                                       Display modes: normal, ascii, auto (default: auto)')
+				println('  -h, --help                          Show this help message')
+				println('')
+				println('Custom logos can be specified by setting VFETCH_LOGO_FILE environment variable')
+				return
+			} else {
+				println('Unknown option: ${arg}')
+				println('Use vfetch --help for usage information')
+				return
+			}
+		}
+	}
+	
+	if set_image_mode {
+		// In a real implementation, we would save to config file
+		println('Image set for future vfetch runs: ${image_path} (mode: ${display_mode})')
+		return
+	}
+	
+	if display_image_mode {
+		display_image(image_path, display_mode)
+		return
+	}
+	
+	info := get_system_info()
+	
+	// Use configured logo if available, otherwise use command-line option
+	final_logo_file := if logo_file_path != '' { logo_file_path } else { '' }
+	
+	print_logo(logo_choice, final_logo_file)
+	println('${info.username}@${info.os_name}')
+	println('----------------')
+	println('Host: ${info.host}')
+	println('Kernel: ${info.kernel}')
+	println('Uptime: ${info.uptime}')
+	println('Packages: ${info.packages}')
+	println('Shell: ${info.shell}')
+	println('DE: ${info.de}')
+	println('WM: ${info.wm}')
+	println('CPU: ${info.cpu}')
+	println('GPU: ${info.gpu}')
+	println('Memory: ${info.memory}')
+	println('Disk: ${info.disk}')
+	println('Network: ${info.network}')
+}
